@@ -1,2 +1,2 @@
 # n-grams
-¿Cómo escribiría los nuevos cuentos Manuel -el Bot- Rojas?
+¿Cómo escribiría los nuevos poemas Pablo -el Bot- Neruda?
