@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
 
+"""
+This file should be run once.
+
+It scrapes for Pablo Neruda's poems on the web
+and creates a 'data' folder with books in it.
+
+Five folders are created within 'data' folder:
+'cantogeneral'
+'20pda1cd'
+'100sonetos'
+'losversosdelcapitan'
+'residenciaenlatierra'
+
+In each folder there is one poem in a txt file.
+"""
+
 import os
 import requests
 import re
@@ -42,18 +58,26 @@ def poems_to_txt(poems, folder):
             for line in poems[poem]:
                 file.write(f'{line}\n')
 
-def scrap_neruda_cantogeneral():
-    folder = 'cantogeneral'
+def get_page_content(link):
+    page = requests.get(link)
+    print(page.status_code)
+    bs = BeautifulSoup(page.content, 'html.parser')
+
+    return bs
+
+def create_folder(folder):
     try:
         os.makedirs(join('data', folder))
     except FileExistsError:
         pass
+        
+def scrap_neruda_cantogeneral():
+    folder = 'cantogeneral'
+    create_folder(folder)
 
     # thanks to https://www.neruda.uchile.cl/
     link = "https://www.neruda.uchile.cl/obra/cantogeneral.htm"
-    page = requests.get(link)
-    print(page.status_code)
-    bs = BeautifulSoup(page.content, 'html.parser')
+    bs = get_page_content(link)
     #print(bs.prettify())
 
     links_to_poems = [a['href'] for a in bs.find_all('a', href=True) if a.text]
@@ -80,16 +104,12 @@ def scrap_neruda_cantogeneral():
 
 def scrap_neruda_20poemasdeamor():
     folder = '20pda1cd'
-    try:
-        os.makedirs(join('data', folder))
-    except FileExistsError:
-        pass
+    create_folder(folder)
 
     link = "http://www.rinconcastellano.com/biblio/sigloxx_27/neruda_20poe.html"
-    page = requests.get(link)
-    print(page.status_code)
-    bs = BeautifulSoup(page.content, 'html.parser')
+    bs = get_page_content(link)
     #print(bs.prettify())
+
     text = bs.find_all('p')
     lines = [line.text for line in text]
     titles = []
@@ -109,15 +129,10 @@ def scrap_neruda_20poemasdeamor():
 
 def scrap_neruda_100sonetos():
     folder = '100sonetos'
-    try:
-        os.makedirs(join('data', folder))
-    except FileExistsError:
-        pass
+    create_folder(folder)
 
     link = "https://www.poemas-del-alma.com/cien-sonetos-de-amor.htm"
-    page = requests.get(link)
-    print(page.status_code)
-    bs = BeautifulSoup(page.content, 'html.parser')
+    bs = get_page_content(link)
     #print(bs.prettify())
 
     links_to_poems = [a['href'] for a in bs.find_all('a', href=True) if a.text]
@@ -144,16 +159,11 @@ def scrap_neruda_100sonetos():
 
 def scrap_neruda_losversosdelcapitan():
     folder = 'losversosdelcapitan'
-    try:
-        os.makedirs(join('data', folder))
-    except FileExistsError:
-        pass
+    create_folder(folder)
 
     # thanks to https://www.neruda.uchile.cl/
     link = "http://www.neruda.uchile.cl/obra/versoscapitan.htm"
-    page = requests.get(link)
-    print(page.status_code)
-    bs = BeautifulSoup(page.content, 'html.parser')
+    bs = get_page_content(link)
     #print(bs.prettify())
 
     links_to_poems = [a['href'] for a in bs.find_all('a', href=True) if a.text]
@@ -180,15 +190,12 @@ def scrap_neruda_losversosdelcapitan():
 
 def scrap_neruda_residenciaenlatierra():
     folder = 'residenciaenlatierra'
-    try:
-        os.makedirs(join('data', folder))
-    except FileExistsError:
-        pass
+    create_folder(folder)
+
     link = "https://www.literatura.us/neruda/tierra.html"
-    page = requests.get(link)
-    print(page.status_code)
-    bs = BeautifulSoup(page.content, 'html.parser')
-    print(bs.prettify())
+    bs = get_page_content(link)
+    #print(bs.prettify())
+
     titles = [clean_title(b.text) for b in bs.find_all('b')]
     titles = titles[1:-2]
     print(titles)
