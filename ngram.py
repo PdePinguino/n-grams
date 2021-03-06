@@ -6,6 +6,7 @@ This files has the Ngram class.
 import pickle
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 
 class NGram():
@@ -13,31 +14,24 @@ class NGram():
         self.n = n
         self.poems = poems
         self.all_lines = self.append_tag(self.get_lines())
-        self.vocab = []  # stores unique ngrams
-        self.ngram = {}  # counts of ngrams occurrences
-        self.count_ngram_in_poems()
-        self.vocab = set(self.vocab)
-        self.ngram_probs = self.compute_ngram_probs()
+        self.vocab = self.get_vocab()  # stores unique words without <s> and </s>
+        self.n2i = self.ngram2index()
+        self.i2n = self.index2ngram()
+        #self.ngram = {}  # counts of ngrams occurrences
+        #self.count_ngram_in_poems()
+        #self.ngram_probs = self.compute_ngram_probs()
 
-    def compute_ngram_probs2(self):
-        if self.n == 1:
-            df = pd.DataFrame.from_dict(self.ngram, columns=['counts'],orient='index')
-            df.drop('<s>', axis='index', inplace=True)
-            #df.drop('</s>', axis='index', inplace=True)
-            total_counts = df.sum(axis='index')
-            self.add_probs(df, total_counts)
+    def get_vocab(self):
+        words = []
+        for line in self.all_lines:
+            words.extend(line.split()[1:-1])
 
-        else:
-            w2i = self.words2index()
-            data = self.counts2df(w2i)
-            df = pd.DataFrame(data=data, columns=w2i, index=w2i)
-            # to access a specific cell --> df.loc['word_from','word_to']
-
-            df.drop('<s>', axis='columns', inplace=True)
-            #df.drop('</s>', axis='index', inplace=True)
-            self.counts2probs(df, w2i)
+        return list(set(words))
 
     def compute_ngram_probs(self):
+        wf2i, wt2i = self.words2index()
+        i2wf, i2wt = self.index2words(wf2i, wt2i)
+
         if self.n == 1:
             df = pd.DataFrame.from_dict(self.ngram, columns=['counts'],orient='index')
             df.drop('<s>', axis='index', inplace=True)
@@ -48,66 +42,45 @@ class NGram():
             return df
 
         else:
-            w2i = self.words2index()
-            i2w = self.index2words()
-            count_matrix = self.count_matrix(w2i)
-            probs_matrix = self.counts2probs(count_matrix, w2i, i2w)
+            matrix = self.probs_matrix(wf2i, wt2i, i2wf, i2wt)
 
-            return probs_matrix
+            return matrix
 
-    def counts2probs2(self, df, w2i):
-        for word_from in w2i:
-            try:
-                word_from_occurrences = sum(df[word_from])
-                for word_to in w2i:
-                    ngram_ocurrences = df[word_from][word_to]
-                    #print(df[w2i[word_from]],w2i[[word_to]])
-                    df.loc[word_from, word_to] = ngram_ocurrences / word_from_occurrences
-                    #print(df[w2i[word_from]],w2i[[word_to]])
-            except KeyError:  # KeyError: '<s>' --> it has been dropped
-                pass
-        print(df)
+    def probs_matrix(self, wf2i, wt2i, i2wf, i2wt):
+        matrix = np.zeros(shape=(len(wf2i), len(wt2i)))
+        ngram_occurrences = {i2wf[index]: []}
 
-    def counts2probs(self, matrix, w2i, i2w):
-        indexes, columns = matrix.shape
-        for word_from in range(indexes):
-            word_from_occurrences = sum(matrix[word_from])
-            for word_to in range(columns):
-                ngram_ocurrences = matrix[word_from][word_to]
+        for index in tqdm(range(matrix.shape[0])):
+            for column in range(matrix.shape[1]):
+                ngram_occurrences = sum(matrix[index])
+                # assigning occurrences count of this particular ngram
+                ngram = '-'.join([i2wf[index], i2wt[column]])
                 try:
-                    matrix[word_from, word_to] = ngram_ocurrences / word_from_occurrences
-                except RuntimeWarning:  # division by 0 --> </s> does not go to any other word
-                    pass
-
-        return matrix
-
-    def counts2df(self, w2i):
-        matrix = np.zeros(shape=(len(w2i), len(w2i)))
-
-        for word, count in self.ngram.items():
-            word_from, word_to = word.split('-')
-            matrix[w2i[word_from], w2i[word_to]] = count
-
-        return matrix
-
-    def count_matrix(self, w2i):
-        matrix = np.zeros(shape=(len(w2i), len(w2i)))
-
-        for word, count in self.ngram.items():
-            word_from, word_to = word.split('-')
-            matrix[w2i[word_from], w2i[word_to]] = count
+                    matrix[index, column] = self.ngram[ngram] / ngram_occurrences
+                except KeyError:
+                    matrix[index, column] = 0.0  # assigning 0.0 to non-seeing ngrams
 
         return matrix
 
     def words2index(self):
-        w2i = {word: index for index, word in enumerate(self.vocab)}
+        if self.n == 1:
+            wf2i = {word: index for index, word in enumerate([voc for voc in self.ngram])}
+            wt2i = {word: index for index, word in enumerate([voc for voc in self.ngram])}
+        else:
+            words = [word.rpartition('-') for word in self.ngram]
+            words_from = list(set([word[0] for word in words]))
+            words_to = list(set([word[2] for word in words]))
 
-        return w2i
+            wf2i = {word: index for index, word in enumerate(words_from)}
+            wt2i = {word: index for index, word in enumerate(words_to)}
 
-    def index2words(self):
-        i2w = {index: word for index, word in enumerate(self.vocab)}
+        return wf2i, wt2i
 
-        return i2w
+    def index2words(self, wf2i, wt2i):
+        i2wf = {index: word for word, index in wf2i.items()}
+        i2wt = {index: word for word, index in wt2i.items()}
+
+        return i2wf, i2wt
 
     def add_probs(self, df, total_counts):
         probs = []
@@ -141,7 +114,6 @@ class NGram():
 
     def uni_gram(self, line):
         for word in line.split():
-            self.vocab.append(word)
             try:
                 self.ngram[word] += 1
             except KeyError:
@@ -151,7 +123,6 @@ class NGram():
 
     def n_gram(self, line):
         words = line.split()
-        self.vocab.extend(words)
         for index in range(len(words) - (self.n - 1)):
             nword = '-'.join(words[index: index + self.n])
             try:
@@ -181,10 +152,12 @@ if __name__ == '__main__':
     #print(unigram.ngram)
     #print(unigram.ngram_table)
 
-    bigram = NGram(poems, n=2)
+    #bigram = NGram(poems, n=2)
     #print(bigram.ngram)
-    print(bigram.ngram_probs)
-    print(bigram.ngram_probs[np.nonzero(bigram.ngram_probs)])
+    #print(bigram.ngram_probs)
+    #print(bigram.ngram_probs[np.nonzero(bigram.ngram_probs)])
 
-    #trigram = NGram(poems, n=3)
-    #print(trigram.ngram)
+    trigram = NGram(poems, n=3)
+    print(trigram.ngram)
+    print(trigram.ngram_probs)
+    print(trigram.ngram_probs[np.nonzero(trigram.ngram_probs)])
