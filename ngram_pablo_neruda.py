@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 
 """
-This files has the Generator class.
+This file has the PabloNeruda class.
 """
 
-import pickle
-from os.path import join
-import numpy as np
 import re
-from tqdm import tqdm
-import sys
+import pickle
+import argparse
+import numpy as np
+from os.path import join
 from ngram import NGram
 
-class NGramGenerator():
+
+class PabloNeruda():
     def __init__(self, ngram):
         self.n = ngram.n
         self.vocab = ngram.vocab
@@ -85,13 +85,26 @@ class NGramGenerator():
 
 
 if __name__ == '__main__':
-    with open(join('pkls', sys.argv[1]), 'rb') as handle:
+    parser = argparse.ArgumentParser(description='...')
+    parser.add_argument('-n', '--ngram', action='store', type=str, default=False)
+    parser.add_argument('-l', '--max_words_per_line', action='store', type=int, default=False)
+    parser.add_argument('-p', '--lines_per_poem', action='store', type=int, default=False)
+    parser.add_argument('-t', '--words_per_title', action='store', type=int, default=False)
+    args = parser.parse_args()
+
+    with open(join('pkls', args.ngram + '.pkl'), 'rb') as handle:
         ngram = pickle.load(handle)
 
-    generator = NGramGenerator(ngram)
-    poem = generator.write_poem()
-    title = generator.write_title(poem)
+    pablo_neruda = PabloNeruda(ngram)
 
-    print('title:', title, '\n')
+    if args.max_words_per_line: pablo_neruda.max_words_per_line = args.max_words_per_line
+    if args.lines_per_poem: pablo_neruda.lines_per_poem = args.lines_per_poem
+    if args.words_per_title: pablo_neruda.words_per_title = args.words_per_title
+
+    poem = pablo_neruda.write_poem()
+    title = pablo_neruda.write_title(poem)
+
+    print('\n\t', title, '\n')
     for line in poem:
-        print(line)
+        print('\t', line)
+    print()

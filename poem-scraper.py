@@ -24,8 +24,6 @@ from bs4 import BeautifulSoup
 
 
 def clean_title(title):
-    print(title)
-    print(type(title))
     title = title.lower()
     words = [word for word in title.split()]
     title = ' '.join(words)
@@ -70,7 +68,7 @@ def create_folder(folder):
         os.makedirs(join('data', folder))
     except FileExistsError:
         pass
-        
+
 def scrap_neruda_cantogeneral():
     folder = 'cantogeneral'
     create_folder(folder)
