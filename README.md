@@ -1,5 +1,5 @@
 # NGram Pablo Neruda: an N-Gram Language Model
-¿Cómo escribiría los nuevos poemas Pablo -el Bot- Neruda?
+¿Cómo escribiría los nuevos poemas NGram Pablo Neruda?
 
 ## Cómo usar este repositorio?
 Run in the terminal the following commands:
