@@ -75,6 +75,42 @@ probabilidad('de'|'los') = 1 / 3
 
 En otras palabras, cuando mi modelo vea la palabra `los`, entonces determinará hay 0.333 de probabilidades de que la siguiente palabra sea `de` y 0.666 de probabilidades de que la siguiente palabra sea `versos`.
 
+## Poemas de NGram Pablo Neruda
+**(unigram)**
+
+"y mi esperemos"
+
+infancia mismos guitarra  
+me escucha mi  
+lunares meteoros bienamada  
+esperemos y solamente  
+
+**(bigram)**
+
+"tu detenidas murciélagos"
+
+soldaditos  
+príncipes rodean oyes  
+papel escrito  
+detenidas y esas  
+ligera  
+intención nupcial edad  
+murciélagos una mano  
+trajiste del brazo  
+encadenado sobre tu  
+
+**(trigram)**
+
+"amargas la literatura tan lejos"
+
+dormida y desnuda fuego y a cielo  
+calles amargas derrotadas  
+la literatura  
+traída de tan lejos la lluvia de  
+de frutos agudos  
+pero por sobre todo hay un planeta  
+
+
 ## Usar otro corpus
 Para calcular nuevamente las probabilidades, debes utilizar la clase NGram. Esta recoge el corpus contenido en el archivo `poems.pkl` de la carpeta `pkls`. El archivo está en formato de diccionario[libro-1][poema-1] = [list of verses]  
 
