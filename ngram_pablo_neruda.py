@@ -92,7 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--words_per_title', action='store', type=int, default=False)
     args = parser.parse_args()
 
-    with open(join('pkls', args.ngram + '.pkl'), 'rb') as handle:
+    with open(join('ngrams_probs', args.ngram + '.pkl'), 'rb') as handle:
         ngram = pickle.load(handle)
 
     pablo_neruda = PabloNeruda(ngram)

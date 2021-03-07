@@ -132,7 +132,7 @@ class NGram():
 
 
 if __name__ == '__main__':
-    with open(join('pkls', 'poems.pkl'), 'rb') as handle:
+    with open(join('corpus', 'poems.pkl'), 'rb') as handle:
         poems = pickle.load(handle)
 
     unigram = NGram(poems, n=1)
