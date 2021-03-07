@@ -1,95 +1,77 @@
 #!/usr/bin/env python3
 
 """
-This files has the Ngram class.
+This files has the NGram class.
 """
+
 import pickle
-import pandas as pd
 import numpy as np
+import re
 from tqdm import tqdm
 
 
 class NGram():
-    def __init__(self, poems, n):
+    def __init__(self, poems, n, reduced=False):
         self.n = n
         self.poems = poems
-        self.all_lines = self.append_tag(self.get_lines())
+        self.tagged_lines = self.append_tag(self.get_lines())
+        if reduced:
+            print('using reduced corpus')
+            self.tagged_lines = self.tagged_lines[:10]
         self.vocab = self.get_vocab()  # stores unique words without <s> and </s>
-        self.n2i = self.ngram2index()
-        self.i2n = self.index2ngram()
-        #self.ngram = {}  # counts of ngrams occurrences
-        #self.count_ngram_in_poems()
-        #self.ngram_probs = self.compute_ngram_probs()
+
+        self.index = 0
+        self.n2i = {}  # ngram to index
+        self.i2n = {}  # index to ngram
+        self.ngram_counts = {}  # counts of ngrams occurrences
+        self.count_ngram_in_poems()  # it populates n2i, i2n, ngram_counts dictionaries
+
+        # key is an ngram-1, value is the log of next-seen-word occurrence probability
+        # example for bigram case:
+        # self.ngram_probs['en'] = {'el': -0.40546510810816444, 'mi': -1.0986122886681098}
+        self.ngram_probs = {}
+        self.compute_probs()
+
+    def compute_probs(self):
+        if self.n == 1:
+            self.compute_unigram_probs()
+        else:
+            self.compute_ngram_probs()
+
+        return
+
+    def compute_ngram_probs(self):
+        print('computing ngram probs. this might take a while...')
+        for ngram in tqdm(self.ngram_counts):
+            words_from = ngram.rpartition('-')[0]
+            pattern = re.compile(f'{words_from}-.*')
+            seen_ngrams = [ngram for ngram in self.ngram_counts if re.match(pattern, ngram)]
+            total_counts = sum([self.ngram_counts[ngram] for ngram in seen_ngrams])
+
+            self.ngram_probs[words_from] = {}
+            for seen_ngram in seen_ngrams:
+                word_to = seen_ngram.rpartition('-')[2]
+                ngram_counts = self.ngram_counts[seen_ngram]
+                self.ngram_probs[words_from][word_to] = np.log(ngram_counts / total_counts)
+
+        return
+
+    def compute_unigram_probs(self):
+        total_counts = sum([self.ngram_counts[word] for word in self.ngram_counts])
+        for word in tqdm(self.ngram_counts):
+            word_counts = self.ngram_counts[word]
+            self.ngram_probs[word] = np.log(word_counts / total_counts)
+
+        for word in self.ngram_probs:
+            self.ngram_probs[word] = self.ngram_probs
+        return
 
     def get_vocab(self):
         words = []
-        for line in self.all_lines:
+        for line in self.tagged_lines:
             words.extend(line.split()[1:-1])
 
         return list(set(words))
-
-    def compute_ngram_probs(self):
-        wf2i, wt2i = self.words2index()
-        i2wf, i2wt = self.index2words(wf2i, wt2i)
-
-        if self.n == 1:
-            df = pd.DataFrame.from_dict(self.ngram, columns=['counts'],orient='index')
-            df.drop('<s>', axis='index', inplace=True)
-            #df.drop('</s>', axis='index', inplace=True)
-            total_counts = df.sum(axis='index')
-            df = self.add_probs(df, total_counts)
-
-            return df
-
-        else:
-            matrix = self.probs_matrix(wf2i, wt2i, i2wf, i2wt)
-
-            return matrix
-
-    def probs_matrix(self, wf2i, wt2i, i2wf, i2wt):
-        matrix = np.zeros(shape=(len(wf2i), len(wt2i)))
-        ngram_occurrences = {i2wf[index]: []}
-
-        for index in tqdm(range(matrix.shape[0])):
-            for column in range(matrix.shape[1]):
-                ngram_occurrences = sum(matrix[index])
-                # assigning occurrences count of this particular ngram
-                ngram = '-'.join([i2wf[index], i2wt[column]])
-                try:
-                    matrix[index, column] = self.ngram[ngram] / ngram_occurrences
-                except KeyError:
-                    matrix[index, column] = 0.0  # assigning 0.0 to non-seeing ngrams
-
-        return matrix
-
-    def words2index(self):
-        if self.n == 1:
-            wf2i = {word: index for index, word in enumerate([voc for voc in self.ngram])}
-            wt2i = {word: index for index, word in enumerate([voc for voc in self.ngram])}
-        else:
-            words = [word.rpartition('-') for word in self.ngram]
-            words_from = list(set([word[0] for word in words]))
-            words_to = list(set([word[2] for word in words]))
-
-            wf2i = {word: index for index, word in enumerate(words_from)}
-            wt2i = {word: index for index, word in enumerate(words_to)}
-
-        return wf2i, wt2i
-
-    def index2words(self, wf2i, wt2i):
-        i2wf = {index: word for word, index in wf2i.items()}
-        i2wt = {index: word for word, index in wt2i.items()}
-
-        return i2wf, i2wt
-
-    def add_probs(self, df, total_counts):
-        probs = []
-        for word in df.index:
-            prob = df['counts'][word] / total_counts
-            probs.append(prob.item())
-        df['probs'] = probs
-
-        return df
 
     def get_lines(self):
         lines = [line for book in self.poems
@@ -99,7 +81,7 @@ class NGram():
         return lines
 
     def count_ngram_in_poems(self):
-        for line in self.all_lines:
+        for line in self.tagged_lines:
             self.count_ngram_in_line(line)
 
         return
@@ -113,22 +95,28 @@ class NGram():
         return
 
     def uni_gram(self, line):
-        for word in line.split():
+        for unigram in line.split()[1:]:  # skipping first token <s>
             try:
-                self.ngram[word] += 1
+                self.ngram_counts[unigram] += 1
             except KeyError:
-                self.ngram[word] = 1
+                self.ngram_counts[unigram] = 1
+                self.n2i[unigram] = self.index
+                self.i2n[self.index] = unigram
+                self.index += 1
 
         return
 
     def n_gram(self, line):
         words = line.split()
         for index in range(len(words) - (self.n - 1)):
-            nword = '-'.join(words[index: index + self.n])
+            ngram = '-'.join(words[index: index + self.n])
             try:
-                self.ngram[nword] += 1
+                self.ngram_counts[ngram] += 1
             except KeyError:
-                self.ngram[nword] = 1
+                self.ngram_counts[ngram] = 1
+                self.n2i[ngram] = self.index
+                self.i2n[self.index] = ngram
+                self.index += 1
 
         return
 
@@ -149,15 +137,10 @@ if __name__ == '__main__':
         poems = pickle.load(handle)
 
     #unigram = NGram(poems, n=1)
-    #print(unigram.ngram)
-    #print(unigram.ngram_table)
-
     #bigram = NGram(poems, n=2)
-    #print(bigram.ngram)
-    #print(bigram.ngram_probs)
-    #print(bigram.ngram_probs[np.nonzero(bigram.ngram_probs)])
+    #trigram = NGram(poems, n=3)
+    fourthgram = NGram(poems, n=4)
 
-    trigram = NGram(poems, n=3)
-    print(trigram.ngram)
-    print(trigram.ngram_probs)
-    print(trigram.ngram_probs[np.nonzero(trigram.ngram_probs)])
+    # save to pkl file
+    with open('fourthgram.pkl', 'wb') as handle:
+        pickle.dump(fourthgram, handle)
