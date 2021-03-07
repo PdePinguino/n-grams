@@ -63,7 +63,7 @@ Imaginemos un corpus de 3 versos y un modelo en el que n = 2 (bigram):
 <s> los versos tristes </s>  
 <s> los de esta noche </s>  
 ```
-Los símbolos <s> y <s/> significan inicio de oración y término de oración, respectivamente.  
+Los símbolos \<s\> y \<\/s\> significan inicio de oración y término de oración, respectivamente.  
 
 Para calcular la probabilidad de que ocurra la secuencia `los de`, entonces debemos contar cuántas veces ocurre esta secuencia dividida por todas las secuencias que comiencen con `los`, es decir:
 
