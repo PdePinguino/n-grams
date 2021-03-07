@@ -5,6 +5,7 @@ This files has the NGram class.
 """
 
 import pickle
+from os.path import join
 import numpy as np
 import re
 from tqdm import tqdm
@@ -62,8 +63,6 @@ class NGram():
             word_counts = self.ngram_counts[word]
             self.ngram_probs[word] = np.log(word_counts / total_counts)
 
-        for word in self.ngram_probs:
-            self.ngram_probs[word] = self.ngram_probs
         return
 
     def get_vocab(self):
@@ -88,13 +87,13 @@ class NGram():
 
     def count_ngram_in_line(self, line):
         if self.n == 1:
-            self.uni_gram(line)
+            self.count_unigram(line)
         else:
-            self.n_gram(line)
+            self.count_ngram(line)
 
         return
 
-    def uni_gram(self, line):
+    def count_unigram(self, line):
         for unigram in line.split()[1:]:  # skipping first token <s>
             try:
                 self.ngram_counts[unigram] += 1
@@ -106,7 +105,7 @@ class NGram():
 
         return
 
-    def n_gram(self, line):
+    def count_ngram(self, line):
         words = line.split()
         for index in range(len(words) - (self.n - 1)):
             ngram = '-'.join(words[index: index + self.n])
@@ -133,14 +132,14 @@ class NGram():
 
 
 if __name__ == '__main__':
-    with open('poems.pkl', 'rb') as handle:
+    with open(join('pkls', 'poems.pkl'), 'rb') as handle:
         poems = pickle.load(handle)
 
-    #unigram = NGram(poems, n=1)
+    unigram = NGram(poems, n=1)
     #bigram = NGram(poems, n=2)
     #trigram = NGram(poems, n=3)
-    fourthgram = NGram(poems, n=4)
+    #fourthgram = NGram(poems, n=4)
 
     # save to pkl file
-    with open('fourthgram.pkl', 'wb') as handle:
-        pickle.dump(fourthgram, handle)
+    with open('unigram.pkl', 'wb') as handle:
+        pickle.dump(unigram, handle)

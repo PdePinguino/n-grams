@@ -2,6 +2,9 @@
 
 """
 This file cleans the scraped poems from the web.
+
+It requires poem-scraper.py to be run first.
+
 It reads from the 'data' folder and outputs to a pikel file
 all poems.
 
@@ -57,6 +60,7 @@ def dir_in_folder(folder):
 
 
 if __name__ == '__main__':
+    # it assumes that poem-scraper.py was run first
     # reading poems from data folder
     books = dir_in_folder('data')
     poems = read_from_books(books)
