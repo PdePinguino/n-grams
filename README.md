@@ -1,4 +1,4 @@
-# Pablo -el bot- Neruda: an N-Gram Language Model
+# NGram Pablo Neruda: an N-Gram Language Model
 ¿Cómo escribiría los nuevos poemas Pablo -el Bot- Neruda?
 
 ## Cómo usar este repositorio?
@@ -6,23 +6,33 @@ Run in the terminal the following commands:
 ```
 git clone https://github.com/PdePinguino/n-grams.git
 cd n-grams
-./pablo-elbot-neruda.py n=2 lines=10
+./ngram_pablo_neruda.py -n bigram
 ```
 and a poem will be printed on the console using a bigram language model.
 
 Parameters:  
-`n`: it specifies the language model (unigram, bigram, trigram...)  
-`lines`: it specifies the amount of lines to be generated.
+`-n`, `ngram`: it specifies the language model (ngrams available: unigram, bigram, trigram, fourthgram)  
+`-l`, `max_words_per_line`: it overwrites the default value of `max_words_per_line`  
+`-p`, `lines_per_poem`: it overwrites the default value of `lines_per_poem`  
+`-t`, `words_per_title`: it overwrites the default value of `words_per_title`  
 
-## Cómo funciona Pablo -el bot- Neruda?
+`ngram_pablo_neruda.py` instantiates a PabloNeruda class that uses the ngram probabilities previously saved in a pikle file by the `NGram` class.
 
-Pablo -el bot- Neruda usa un modelo del lenguaje estadístico (ngram) para generar poemas. Puedes especificar el valor de N (1, 2, 3...) que afectarán tanto las probabilidades del modelo del lenguaje como el resultado final.
+PabloNeruda Class Parameters:  
+`max_words_per_line`: int  
+`lines_per_poem`: int  
+`words_per_title`: int  
+(see more details in .py)  
 
-Las probabilidades del modelo han sido calculadas utilizando como corpus 5 poemarios de Pablo Neruda (extraídos de la web). Para facilitar el uso del modelo (y porque demora algún tiempo realizar el cálculo) el repositorio incluye las probabilidades previamente calculadas. Puedes, de todas maneras, agregar o modificar el corpus y volver a calcular las probabilidades ngrams (ver apartado "Usar otro corpus").
+## Cómo funciona NGram Pablo Neruda?
+
+NGram Pablo Neruda usa un modelo del lenguaje estadístico (ngram) para generar poemas. Puedes especificar el valor de N (unigram, bigram, trigram...) que afectarán tanto las probabilidades del modelo del lenguaje como el resultado final. Asimismo puedes especificar cuántas palabras máximo por verso, cuántos versos en el poema y de cuántas palabras el título.
+
+Las probabilidades del modelo han sido calculadas utilizando como corpus 5 poemarios de Pablo Neruda (ver apartado "Créditos"). Para facilitar el uso del modelo (y porque demora algún tiempo realizar el cálculo) el repositorio incluye las probabilidades previamente calculadas. Puedes, de todas maneras, agregar o modificar el corpus y volver a calcular las probabilidades ngrams (ver apartado "Usar otro corpus").
 
 Estas probabilidades son calculadas por la clase `NGram` contenida en el archivo `ngram.py`.
 
-La clase `EscritorNGram` utiliza las probabilidades del modelo del lenguaje para generar un poema.
+La clase `PabloNeruda` utiliza las probabilidades del modelo del lenguaje para generar un poema. En esta implementación, solo se generan ngrams que han sido vistos.
 
 ## Qué son N-grams?
 
@@ -44,16 +54,36 @@ Que el modelo es capaz de predecir qué secuencia es más probable de ocurrir. P
 
 Para saberlo, necesitamos un corpus para contar la ocurrencia de ngrams y estadísticamente predecir la probabilidad de que cierta secuencia ocurra o no ocurra.
 
-La fórmula general del cálculo es:
+## Cálculo de probabilidades
+Existen distintas maneras de implementar este modelo y varían en cómo solucionan ciertos problemas centrales (por ejemplo, asignar probabilidades o emitir ngrams que no están contenidos en el corpus). En este caso, la clase es solo capaz de emitir ngrams que están contenidos en el corpus.
 
-probabilidad = ocurrencias ngrams / total ocurrencias (ngrams - 1)
+Imaginemos un corpus de 3 versos y un modelo en el que n = 2 (bigram):  
+```
+<s> puedo escribir los versos </s>  
+<s> los versos tristes </s>  
+<s> los de esta noche </s>  
+```
+Los símbolos <s> y <s/> significan inicio de oración y término de oración, respectivamente.  
 
-## Implementación
-Existen distintas maneras de implementar este modelo y varían en cómo solucionan ciertos problemas centrales. Dijimos que los cálculos de probabilidades utilizan un corpus, y todo corpus es un conjunto finito de palabras, por lo que eventualmente el modelo intentará predecir la probabilidad de ocurrencia de una secuencia que no ha visto previamente y, por tanto, no ha calculado su probabilidad de ocurrencia.
+Para calcular la probabilidad de que ocurra la secuencia `los de`, entonces debemos contar cuántas veces ocurre esta secuencia dividida por todas las secuencias que comiencen con `los`, es decir:
 
-En este caso, hemos de
+probabilidad('de'|'los') = frecuencia('de'|'los') / frecuencia('x'|'los')
+
+en donde 'x' es reemplazada por todas las palabras que efectivamente ocurren en el corpus. En este caso, `los versos` ocurre 2 veces.
+
+probabilidad('de'|'los') = 1 / 3
+
+En otras palabras, cuando mi modelo vea la palabra `los`, entonces determinará hay 0.333 de probabilidades de que la siguiente palabra sea `de` y 0.666 de probabilidades de que la siguiente palabra sea `versos`.
 
 ## Usar otro corpus
+Para calcular nuevamente las probabilidades, debes utilizar la clase NGram. Esta recoge el corpus contenido en el archivo `poems.pkl` de la carpeta `pkls`. El archivo está en formato de diccionario[libro-1][poema-1] = [list of verses]  
+
+Para utilizar otro corpus, debes generar otro archivo .pkl y pasarlo por la NGram class que generará nuevas probabilidades.
 
 ## Credits
-
+Libros de Pablo Neruda extraídos de:  
+"Canto general" https://www.neruda.uchile.cl/obra/cantogeneral.htm  
+"20 poemas de amor y una canción desesperada" http://www.rinconcastellano.com/biblio/sigloxx_27/neruda_20poe.html  
+"100 sonetos" https://www.poemas-del-alma.com/cien-sonetos-de-amor.htm  
+"Los versos del capitán" http://www.neruda.uchile.cl/obra/versoscapitan.htm  
+"Residencia en la tierra" https://www.literatura.us/neruda/tierra.html
