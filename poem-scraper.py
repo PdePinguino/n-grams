@@ -3,20 +3,37 @@
 """
 This file should be run once.
 
-It scrapes for Pablo Neruda's poems on the web
-and creates a 'data' folder with books in it.
+'scrape' flag:
+    It scrapes for Pablo Neruda's poems on the web
+    and creates a 'data' folder with books in it.
 
-Five folders are created within 'data' folder:
-'cantogeneral'
-'20pda1cd'
-'100sonetos'
-'losversosdelcapitan'
-'residenciaenlatierra'
+    Five folders are created within 'data' folder:
+    'cantogeneral'
+    '20pda1cd'
+    '100sonetos'
+    'losversosdelcapitan'
+    'residenciaenlatierra'
+
+'clean' flag:
+    It cleans previously downloaded books in txt format.
+    '2000'
+    'elegia'
+    'odas elementales'
+    'el libro de las preguntas'
+    'confieso que he vivido'
+    'geografia infructuosa'
+    'paranacer he nacido'
+    'tercera residencia'
+    'crepusculario'
+    'nuevas odas elementales'
+    'plenos poderes'
+
 
 In each folder there is one poem in a txt file.
 """
 
 import os
+import sys
 import requests
 import re
 from os.path import join
@@ -211,6 +228,23 @@ def scrap_neruda_residenciaenlatierra():
 
     return
 
+def clean_downloaded_books():
+    """
+        '2000'
+        'elegia'
+        'odas elementales'
+        'el libro de las preguntas'
+        'confieso que he vivido'
+        'geografia infructuosa'
+        'paranacer he nacido'
+        'tercera residencia'
+        'crepusculario'
+        'nuevas odas elementales'
+        'plenos poderes'
+    """
+    folder = 'cantogeneral'
+    create_folder(folder)
+
 
 if __name__ == '__main__':
     try:
@@ -218,8 +252,16 @@ if __name__ == '__main__':
     except FileExistsError:
         pass
 
-    scrap_neruda_cantogeneral()
-    scrap_neruda_20poemasdeamor()
-    scrap_neruda_100sonetos()
-    scrap_neruda_losversosdelcapitan()
-    scrap_neruda_residenciaenlatierra()
+    try:
+        if sys.argv[1] == 'scrape':
+            scrap_neruda_cantogeneral()
+            scrap_neruda_20poemasdeamor()
+            scrap_neruda_100sonetos()
+            scrap_neruda_losversosdelcapitan()
+            scrap_neruda_residenciaenlatierra()
+        elif sys.argv[1] == 'clean':
+            clean_downloaded_books()
+        else:
+            raise ValueError(f"unrecognized '{sys.argv[1]}' flag\nrun poem-scraper.py with 'scrape' or 'clean' flags")
+    except IndexError:
+        print("run poem-scraper.py with 'scrape' or 'clean' flags")

@@ -83,6 +83,24 @@ class PabloNeruda():
 
         return ' '.join(title)
 
+def generate(ngram, mwpl, lpp, wpt):
+    with open(join('ngrams_probs', args.ngram + '.pkl'), 'rb') as handle:
+        ngram = pickle.load(handle)
+
+    pablo_neruda = PabloNeruda(ngram)
+    pablo_neruda.max_words_per_line = mwpl
+    pablo_neruda.lines_per_poem = lpp
+    pablo_neruda.words_per_title = wpt
+
+    poem = pablo_neruda.write_poem()
+    title = pablo_neruda.write_title(poem)
+
+    print('\n\t', title, '\n')
+    for line in poem:
+        print('\t', line)
+    print()
+
+    return (title, poem)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='...')
@@ -92,19 +110,4 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--words_per_title', action='store', type=int, default=False)
     args = parser.parse_args()
 
-    with open(join('ngrams_probs', args.ngram + '.pkl'), 'rb') as handle:
-        ngram = pickle.load(handle)
-
-    pablo_neruda = PabloNeruda(ngram)
-
-    if args.max_words_per_line: pablo_neruda.max_words_per_line = args.max_words_per_line
-    if args.lines_per_poem: pablo_neruda.lines_per_poem = args.lines_per_poem
-    if args.words_per_title: pablo_neruda.words_per_title = args.words_per_title
-
-    poem = pablo_neruda.write_poem()
-    title = pablo_neruda.write_title(poem)
-
-    print('\n\t', title, '\n')
-    for line in poem:
-        print('\t', line)
-    print()
+    title, poem = generate(args.ngram, args.max_words_per_line, args.lines_per_poem, args.words_per_title)

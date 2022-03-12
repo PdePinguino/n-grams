@@ -1,2 +1,5 @@
 __pycache__
 venv/
+caller.py
+downloaded_books/
+data/

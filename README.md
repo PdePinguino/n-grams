@@ -123,3 +123,15 @@ Libros de Pablo Neruda extraídos de:
 "100 sonetos" https://www.poemas-del-alma.com/cien-sonetos-de-amor.htm  
 "Los versos del capitán" http://www.neruda.uchile.cl/obra/versoscapitan.htm  
 "Residencia en la tierra" https://www.literatura.us/neruda/tierra.html
+"Libro de las preguntas" https://www.lectulandia.co/book/libro-de-las-preguntas/
+"Crepusculario" https://www.lectulandia.co/book/crepusculario/
+"2000" https://www.lectulandia.co/book/2000-pablo-neruda/
+"Antología general" https://www.lectulandia.co/autor/pablo-neruda/
+"Elegía" https://www.lectulandia.co/autor/pablo-neruda/
+"Nuevas odas elementales" https://www.lectulandia.co/autor/pablo-neruda/
+"Tercera residencia" https://www.lectulandia.co/autor/pablo-neruda/
+"Para nacer he nacido" https://www.lectulandia.co/autor/pablo-neruda/
+"Geografía infructuosa" https://www.lectulandia.co/autor/pablo-neruda/
+"Plenos poderes" https://www.lectulandia.co/autor/pablo-neruda/
+"Confieso que he vivido" https://www.lectulandia.co/autor/pablo-neruda/
+"Odas elementales" http://profesoresderedaccion.blogspot.com/2017/05/obras-completas-de-pablo-neruda-1904.html
