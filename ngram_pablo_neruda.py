@@ -10,7 +10,7 @@ import json
 import argparse
 import numpy as np
 from os.path import join
-from ngram import NGram
+from nerudagramApp.nerudagram.ngram import NGram
 
 
 class PabloNeruda():
@@ -104,7 +104,7 @@ def generate_from_pkl(ngram, mwpl, lpp, wpt):
     return (title, poem)
 
 def generate_from_json(ngram, mwpl, lpp, wpt):
-    with open(join('ngrams_probs', args.ngram + '.json')) as jfile:
+    with open(join('nerudagramApp','nerudagram','ngrams_probs', ngram + '.json')) as jfile:
         jobject = json.load(jfile)
         jfile.close()
 
@@ -115,7 +115,7 @@ def generate_from_json(ngram, mwpl, lpp, wpt):
 
     poem = pablo_neruda.write_poem()
     title = pablo_neruda.write_title(poem)
-
+    print(repr(poem))
     print('\n\t', title, '\n')
     for line in poem:
         print('\t', line)
