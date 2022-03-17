@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
 
 """
-This files has the NGram class.
+This file has the NGram class.
 """
 
 import pickle
 from os.path import join
+from os.path import isfile
+import json
 import numpy as np
 import re
 from tqdm import tqdm
+from datetime import datetime
 
 
 class NGram():
-    def __init__(self, poems, n, reduced=False):
+    def __init__(self, poems, n, tiny=False):
         self.n = n
         self.poems = poems
         self.tagged_lines = self.append_tag(self.get_lines())
-        if reduced:
-            print('using reduced corpus')
+        if tiny:
+            print('using tiny corpus')
             self.tagged_lines = self.tagged_lines[:10]
         self.vocab = self.get_vocab()  # stores unique words without <s> and </s>
 
@@ -27,11 +30,11 @@ class NGram():
         self.ngram_counts = {}  # counts of ngrams occurrences
         self.count_ngram_in_poems()  # it populates n2i, i2n, ngram_counts dictionaries
 
+        self.ngram_probs = {}
+        self.compute_probs()
         # key is an ngram-1, value is the log of next-seen-word occurrence probability
         # example for bigram case:
         # self.ngram_probs['en'] = {'el': -0.40546510810816444, 'mi': -1.0986122886681098}
-        self.ngram_probs = {}
-        self.compute_probs()
 
     def compute_probs(self):
         if self.n == 1:
@@ -130,16 +133,24 @@ class NGram():
 
         return lines_tag
 
+    def save_json(self, output):
+        data = {'NGRAM': self.n,
+                'VOCAB': self.vocab,
+                'PROBS': self.ngram_probs
+                }
+
+        if isfile(output):
+            print(f'{output} already exists')
+            output = 'ngram_data_'+str(datetime.now())
+            print(f'saving to {output}')
+
+        with open(output, 'w') as outfile:
+            json.dump(data, outfile)
+
 
 if __name__ == '__main__':
     with open(join('corpus', 'poems.pkl'), 'rb') as handle:
         poems = pickle.load(handle)
 
-    unigram = NGram(poems, n=1)
-    #bigram = NGram(poems, n=2)
-    #trigram = NGram(poems, n=3)
-    #fourthgram = NGram(poems, n=4)
-
-    # save to pkl file
-    with open('unigram.pkl', 'wb') as handle:
-        pickle.dump(unigram, handle)
+    ngram = NGram(poems, n=4, tiny=False)
+    ngram.save_json('fourthgram.json')

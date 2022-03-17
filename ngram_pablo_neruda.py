@@ -6,6 +6,7 @@ This file has the PabloNeruda class.
 
 import re
 import pickle
+import json
 import argparse
 import numpy as np
 from os.path import join
@@ -13,10 +14,10 @@ from ngram import NGram
 
 
 class PabloNeruda():
-    def __init__(self, ngram):
-        self.n = ngram.n
-        self.vocab = ngram.vocab
-        self.ngram_probs = ngram.ngram_probs
+    def __init__(self, ngram, vocab, probs):
+        self.n = ngram
+        self.vocab = vocab
+        self.ngram_probs = probs
 
         self.max_words_per_line = np.random.randint(1, 5) + self.n
         self.lines_per_poem = np.random.randint(1, 10)
@@ -83,11 +84,31 @@ class PabloNeruda():
 
         return ' '.join(title)
 
-def generate(ngram, mwpl, lpp, wpt):
+def generate_from_pkl(ngram, mwpl, lpp, wpt):
     with open(join('ngrams_probs', args.ngram + '.pkl'), 'rb') as handle:
         ngram = pickle.load(handle)
 
     pablo_neruda = PabloNeruda(ngram)
+    pablo_neruda.max_words_per_line = mwpl
+    pablo_neruda.lines_per_poem = lpp
+    pablo_neruda.words_per_title = wpt
+
+    poem = pablo_neruda.write_poem()
+    title = pablo_neruda.write_title(poem)
+
+    print('\n\t', title, '\n')
+    for line in poem:
+        print('\t', line)
+    print()
+
+    return (title, poem)
+
+def generate_from_json(ngram, mwpl, lpp, wpt):
+    with open(join('ngrams_probs', args.ngram + '.json')) as jfile:
+        jobject = json.load(jfile)
+        jfile.close()
+
+    pablo_neruda = PabloNeruda(jobject['NGRAM'], jobject['VOCAB'], jobject['PROBS'])
     pablo_neruda.max_words_per_line = mwpl
     pablo_neruda.lines_per_poem = lpp
     pablo_neruda.words_per_title = wpt
@@ -110,4 +131,4 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--words_per_title', action='store', type=int, default=False)
     args = parser.parse_args()
 
-    title, poem = generate(args.ngram, args.max_words_per_line, args.lines_per_poem, args.words_per_title)
+    title, poem = generate_from_json(args.ngram, args.max_words_per_line, args.lines_per_poem, args.words_per_title)
