@@ -149,8 +149,17 @@ class NGram():
 
 
 if __name__ == '__main__':
-    with open(join('corpus', 'poems.pkl'), 'rb') as handle:
-        poems = pickle.load(handle)
+	with open(join('corpus', 'poems_all.pkl'), 'rb') as handle:
+		poems = pickle.load(handle)
 
-    ngram = NGram(poems, n=4, tiny=False)
-    ngram.save_json('fourthgram.json')
+	ngram = NGram(poems, n=1, tiny=False)
+	ngram.save_json('unigram.json')
+
+	ngram = NGram(poems, n=2, tiny=False)
+	ngram.save_json('bigram.json')
+
+	ngram = NGram(poems, n=3, tiny=False)
+	ngram.save_json('trigram.json')
+
+	ngram = NGram(poems, n=4, tiny=False)
+	ngram.save_json('fourthgram.json')
