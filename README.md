@@ -112,9 +112,11 @@ pero por sobre todo hay un planeta
 
 
 ## Usar otro corpus
-Para calcular nuevamente las probabilidades, debes utilizar la clase NGram. Esta recoge el corpus contenido en el archivo `poems.pkl` de la carpeta `pkls`. El archivo está en formato de diccionario[libro-1][poema-1] = [list of verses]  
+Para calcular nuevamente las probabilidades, debes utilizar la clase NGram. Esta recoge el corpus contenido en el archivo `poems.pkl` de la carpeta `corpus`. El archivo está en formato de diccionario[libro-1][poema-1] = [list of verses]
 
 Para utilizar otro corpus, debes generar otro archivo .pkl y pasarlo por la NGram class que generará nuevas probabilidades.
+
+`ngram.pl` is a much faster implementation than `ngram.py`
 
 ## Credits
 Libros de Pablo Neruda extraídos de:  

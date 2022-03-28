@@ -15,137 +15,157 @@ from datetime import datetime
 
 
 class NGram():
-    def __init__(self, poems, n, tiny=False):
-        self.n = n
-        self.poems = poems
-        self.tagged_lines = self.append_tag(self.get_lines())
-        if tiny:
-            print('using tiny corpus')
-            self.tagged_lines = self.tagged_lines[:10]
-        self.vocab = self.get_vocab()  # stores unique words without <s> and </s>
+	def __init__(self, poems, n, tiny=False):
+		self.n = n
+		self.poems = poems
+		self.tagged_lines = self.append_tag(self.get_lines())
+		if tiny:
+			print('using tiny corpus')
+			self.tagged_lines = self.tagged_lines[:10]
+		self.vocab = self.get_vocab()  # stores unique words without <s> and </s>
 
-        self.index = 0
-        self.n2i = {}  # ngram to index
-        self.i2n = {}  # index to ngram
-        self.ngram_counts = {}  # counts of ngrams occurrences
-        self.count_ngram_in_poems()  # it populates n2i, i2n, ngram_counts dictionaries
+		self.index = 0
+		self.n2i = {}  # ngram to index
+		self.i2n = {}  # index to ngram
+		self.ngram_counts = {}  # counts of ngrams occurrences
+		self.count_ngram_in_poems()  # it populates n2i, i2n, ngram_counts dictionaries
 
-        self.ngram_probs = {}
-        self.compute_probs()
-        # key is an ngram-1, value is the log of next-seen-word occurrence probability
-        # example for bigram case:
-        # self.ngram_probs['en'] = {'el': -0.40546510810816444, 'mi': -1.0986122886681098}
+		self.ngram_probs = {}
+		self.compute_probs()
+		# key is an ngram-1, value is the log of next-seen-word occurrence probability
+		# example for bigram case:
+		# self.ngram_probs['en'] = {'el': -0.40546510810816444, 'mi': -1.0986122886681098}
 
-    def compute_probs(self):
-        if self.n == 1:
-            self.compute_unigram_probs()
-        else:
-            self.compute_ngram_probs()
+	def compute_probs(self):
+		if self.n == 1:
+			self.compute_unigram_probs()
+		else:
+			#self.compute_ngram_probs()
+			self.compute_ngram_probs_fast()
 
-        return
+		return
 
-    def compute_ngram_probs(self):
-        print('computing ngram probs. this might take a while...')
-        for ngram in tqdm(self.ngram_counts):
-            words_from = ngram.rpartition('-')[0]
-            pattern = re.compile(f'{words_from}-.*')
-            seen_ngrams = [ngram for ngram in self.ngram_counts if re.match(pattern, ngram)]
-            total_counts = sum([self.ngram_counts[ngram] for ngram in seen_ngrams])
+	def compute_ngram_probs(self):
+		print('computing ngram probs. this might take a while...')
+		for ngram in tqdm(self.ngram_counts):
+			words_from = ngram.rpartition('-')[0]
+			pattern = re.compile(f'^{words_from}-.*$')
+			seen_ngrams = [ngram for ngram in self.ngram_counts if re.match(pattern, ngram)]
+			total_counts = sum([self.ngram_counts[ngram] for ngram in seen_ngrams])
 
-            self.ngram_probs[words_from] = {}
-            for seen_ngram in seen_ngrams:
-                word_to = seen_ngram.rpartition('-')[2]
-                ngram_counts = self.ngram_counts[seen_ngram]
-                self.ngram_probs[words_from][word_to] = np.log(ngram_counts / total_counts)
+			self.ngram_probs[words_from] = {}
+			for seen_ngram in seen_ngrams:
+				word_to = seen_ngram.rpartition('-')[2]
+				ngram_counts = self.ngram_counts[seen_ngram]
+				self.ngram_probs[words_from][word_to] = np.log(ngram_counts / total_counts)
 
-        return
+		return
 
-    def compute_unigram_probs(self):
-        total_counts = sum([self.ngram_counts[word] for word in self.ngram_counts])
-        for word in tqdm(self.ngram_counts):
-            word_counts = self.ngram_counts[word]
-            self.ngram_probs[word] = np.log(word_counts / total_counts)
+	def compute_ngram_probs_fast(self):
+		print('FAST computing ngram probs. this might take a while...')
+		matrix = np.zeros((len(self.n2i), len(self.n2i)))
+		print(matrix.shape)
 
-        return
+		for ngram in tqdm(self.ngram_counts):
+			words_from = ngram.rpartition('-')[0]
+			word_to = ngram.rpartition('-')[2]
+			pattern = re.compile(f'^{words_from}-.*$')
+			seen_ngrams = [ngram for ngram in self.ngram_counts if re.match(pattern, ngram)]
+			total_counts = sum([self.ngram_counts[ngram] for ngram in seen_ngrams])
+			self.ngram_probs[words_from] = {}
+			for seen_ngram in seen_ngrams:
+				word_to = seen_ngram.rpartition('-')[2]
+				ngram_counts = self.ngram_counts[seen_ngram]
+				self.ngram_probs[words_from][word_to] = np.log(ngram_counts / total_counts)
 
-    def get_vocab(self):
-        words = []
-        for line in self.tagged_lines:
-            words.extend(line.split()[1:-1])
+		return
 
-        return list(set(words))
+	def compute_unigram_probs(self):
+		total_counts = sum([self.ngram_counts[word] for word in self.ngram_counts])
+		for word in tqdm(self.ngram_counts):
+			word_counts = self.ngram_counts[word]
+			self.ngram_probs[word] = np.log(word_counts / total_counts)
 
-    def get_lines(self):
-        lines = [line for book in self.poems
-                      for file in self.poems[book]
-                      for line in self.poems[book][file][1]]
+		return
 
-        return lines
+	def get_vocab(self):
+		words = []
+		for line in self.tagged_lines:
+			words.extend(line.split()[1:-1])
 
-    def count_ngram_in_poems(self):
-        for line in self.tagged_lines:
-            self.count_ngram_in_line(line)
+		return list(set(words))
 
-        return
+	def get_lines(self):
+		lines = [line for book in self.poems
+					  for file in self.poems[book]
+					  for line in self.poems[book][file][1]]
 
-    def count_ngram_in_line(self, line):
-        if self.n == 1:
-            self.count_unigram(line)
-        else:
-            self.count_ngram(line)
+		return lines
 
-        return
+	def count_ngram_in_poems(self):
+		for line in self.tagged_lines:
+			self.count_ngram_in_line(line)
 
-    def count_unigram(self, line):
-        for unigram in line.split()[1:]:  # skipping first token <s>
-            try:
-                self.ngram_counts[unigram] += 1
-            except KeyError:
-                self.ngram_counts[unigram] = 1
-                self.n2i[unigram] = self.index
-                self.i2n[self.index] = unigram
-                self.index += 1
+		return
 
-        return
+	def count_ngram_in_line(self, line):
+		if self.n == 1:
+			self.count_unigram(line)
+		else:
+			self.count_ngram(line)
 
-    def count_ngram(self, line):
-        words = line.split()
-        for index in range(len(words) - (self.n - 1)):
-            ngram = '-'.join(words[index: index + self.n])
-            try:
-                self.ngram_counts[ngram] += 1
-            except KeyError:
-                self.ngram_counts[ngram] = 1
-                self.n2i[ngram] = self.index
-                self.i2n[self.index] = ngram
-                self.index += 1
+		return
 
-        return
+	def count_unigram(self, line):
+		for unigram in line.split()[1:]:  # skipping first token <s>
+			try:
+				self.ngram_counts[unigram] += 1
+			except KeyError:
+				self.ngram_counts[unigram] = 1
+				self.n2i[unigram] = self.index
+				self.i2n[self.index] = unigram
+				self.index += 1
 
-    def append_tag(self, lines):
-        lines_tag = []
-        for line in lines:
-            line = line.split()
-            line.insert(0, '<s>')
-            line.append('</s>')
-            line = ' '.join(line)
-            lines_tag.append(line)
+		return
 
-        return lines_tag
+	def count_ngram(self, line):
+		words = line.split()
+		for index in range(len(words) - (self.n - 1)):
+			ngram = '-'.join(words[index: index + self.n])
+			try:
+				self.ngram_counts[ngram] += 1
+			except KeyError:
+				self.ngram_counts[ngram] = 1
+				self.n2i[ngram] = self.index
+				self.i2n[self.index] = ngram
+				self.index += 1
 
-    def save_json(self, output):
-        data = {'NGRAM': self.n,
-                'VOCAB': self.vocab,
-                'PROBS': self.ngram_probs
-                }
+		return
 
-        if isfile(output):
-            print(f'{output} already exists')
-            output = 'ngram_data_'+str(datetime.now())
-            print(f'saving to {output}')
+	def append_tag(self, lines):
+		lines_tag = []
+		for line in lines:
+			line = line.split()
+			line.insert(0, '<s>')
+			line.append('</s>')
+			line = ' '.join(line)
+			lines_tag.append(line)
 
-        with open(output, 'w') as outfile:
-            json.dump(data, outfile)
+		return lines_tag
+
+	def save_json(self, output):
+		data = {'NGRAM': self.n,
+				'VOCAB': self.vocab,
+				'PROBS': self.ngram_probs
+				}
+
+		if isfile(output):
+			print(f'{output} already exists')
+			output = 'ngram_data_'+str(datetime.now())+'.json'
+			print(f'saving to {output}')
+
+		with open(output, 'w') as outfile:
+			json.dump(data, outfile)
 
 
 if __name__ == '__main__':
