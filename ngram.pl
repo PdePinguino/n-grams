@@ -9,9 +9,11 @@ Reads poems from 'poems_all.txt'
 and prints the probabilities.
 
 Usage example:
-perl ngram.pl 1
 perl ngram.pl 2
-perl ngram.pl 3
+Output:
+FROM_TOKENS\tTO_TOKENS\tPROBABILITY
+la	noche	0.5
+la	luna	0.5
 
 =cut
 $|++;

@@ -7,128 +7,169 @@ This file has the PabloNeruda class.
 import re
 import pickle
 import json
+import csv
 import argparse
 import numpy as np
 from os.path import join
-from nerudagramApp.nerudagram.ngram import NGram
 
 
 class PabloNeruda():
-    def __init__(self, ngram, vocab, probs):
-        self.n = ngram
-        self.vocab = vocab
-        self.ngram_probs = probs
+	def __init__(self, ngram, vocab, probs):
+		self.n = ngram
+		self.vocab = vocab
+		self.ngram_probs = probs
 
-        self.max_words_per_line = np.random.randint(1, 5) + self.n
-        self.lines_per_poem = np.random.randint(1, 10)
-        self.words_per_title = np.random.randint(1, 3) + self.n
+		self.max_words_per_line = np.random.randint(1, 5) + self.n
+		self.lines_per_poem = np.random.randint(1, 10)
+		self.words_per_title = np.random.randint(1, 3) + self.n
 
-    def kick_off(self):
-        # randomly chooses the first ngram of the line
-        first_word = '<s>'
-        while first_word == '<s>':
-            first_ngram = np.random.choice(list(self.ngram_probs.keys()))
-            first_word = first_ngram.split('-')[0]
+	def kick_off(self):
+		# randomly chooses the first ngram of the line
+		first_word = '<s>'
+		while first_word == '<s>':
+			first_ngram = np.random.choice(list(self.ngram_probs.keys()))
+			first_word = first_ngram.split('-')[0]
 
-        return first_ngram.split('-')
+		return first_ngram.split('-')
 
-    def next_word(self, previous_ngram):
-        if self.n == 1:
-            words = list(self.ngram_probs.keys())
-            probs = list(self.ngram_probs.values())
-        else:
-            words = list(self.ngram_probs[previous_ngram].keys())
-            probs = list(self.ngram_probs[previous_ngram].values())
+	def next_word(self, previous_ngram):
+		if self.n == 1:
+			words = list(self.ngram_probs.keys())
+			probs = list(self.ngram_probs.values())
+		else:
+			words = list(self.ngram_probs[previous_ngram].keys())
+			probs = list(self.ngram_probs[previous_ngram].values())
+		print('sum', sum(np.exp(probs)))
+		print(np.exp(probs))
+		probs_norm = np.exp(probs)/np.exp(probs).sum()
+		chosen_word = np.random.choice(a=words, p=probs_norm)
 
-        chosen_word = np.random.choice(a=words, p=np.exp(probs))
+		return chosen_word
 
-        return chosen_word
+	def write_line(self):
+		number_of_words = self.max_words_per_line
+		line = []
+		line.extend(self.kick_off())
+		added = 1
 
-    def write_line(self):
-        number_of_words = self.max_words_per_line
-        line = []
-        line.extend(self.kick_off())
-        added = 1
+		while added < number_of_words:
+			previous_ngram = '-'.join(line[-(self.n - 1):])
+			next_word = self.next_word(previous_ngram)
+			if next_word == '</s>':
+				return ' '.join(line)
+			else:
+				line.append(next_word)
+				added += 1
 
-        while added < number_of_words:
-            previous_ngram = '-'.join(line[-(self.n - 1):])
-            next_word = self.next_word(previous_ngram)
-            if next_word == '</s>':
-                return ' '.join(line)
-            else:
-                line.append(next_word)
-                added += 1
+		return ' '.join(line)
 
-        return ' '.join(line)
+	def write_poem(self):
+		number_of_lines = self.lines_per_poem
+		added = 0
+		poem = []
 
-    def write_poem(self):
-        number_of_lines = self.lines_per_poem
-        added = 0
-        poem = []
+		while added < number_of_lines:
+			poem.append(self.write_line())
+			added += 1
 
-        while added < number_of_lines:
-            poem.append(self.write_line())
-            added += 1
+		return poem
 
-        return poem
+	def write_title(self, poem):
+		number_of_words = self.words_per_title
+		words = [word for line in poem for word in line.split()]
 
-    def write_title(self, poem):
-        number_of_words = self.words_per_title
-        words = [word for line in poem for word in line.split()]
+		try:
+			title = np.random.choice(a=words, size=number_of_words, replace=False)
+		except ValueError:
+			# larger amount of samples than population
+			title = np.random.choice(a=words, size=number_of_words, replace=True)
 
-        try:
-            title = np.random.choice(a=words, size=number_of_words, replace=False)
-        except ValueError:
-            # larger amount of samples than population
-            title = np.random.choice(a=words, size=number_of_words, replace=True)
-
-        return ' '.join(title)
+		return ' '.join(title)
 
 def generate_from_pkl(ngram, mwpl, lpp, wpt):
-    with open(join('ngrams_probs', args.ngram + '.pkl'), 'rb') as handle:
-        ngram = pickle.load(handle)
+	with open(join('ngrams_probs', args.ngram + '.pkl'), 'rb') as handle:
+		ngram = pickle.load(handle)
 
-    pablo_neruda = PabloNeruda(ngram)
-    pablo_neruda.max_words_per_line = mwpl
-    pablo_neruda.lines_per_poem = lpp
-    pablo_neruda.words_per_title = wpt
+	pablo_neruda = PabloNeruda(ngram)
+	pablo_neruda.max_words_per_line = mwpl
+	pablo_neruda.lines_per_poem = lpp
+	pablo_neruda.words_per_title = wpt
 
-    poem = pablo_neruda.write_poem()
-    title = pablo_neruda.write_title(poem)
+	poem = pablo_neruda.write_poem()
+	title = pablo_neruda.write_title(poem)
 
-    print('\n\t', title, '\n')
-    for line in poem:
-        print('\t', line)
-    print()
+	print('\n\t', title, '\n')
+	for line in poem:
+		print('\t', line)
+	print()
 
-    return (title, poem)
+	return (title, poem)
 
 def generate_from_json(ngram, mwpl, lpp, wpt):
-    with open(join('nerudagramApp','nerudagram','ngrams_probs', ngram + '.json')) as jfile:
-        jobject = json.load(jfile)
-        jfile.close()
+	with open(join('nerudagramApp','nerudagram','ngrams_probs', ngram + '.json')) as jfile:
+		jobject = json.load(jfile)
+		jfile.close()
 
-    pablo_neruda = PabloNeruda(jobject['NGRAM'], jobject['VOCAB'], jobject['PROBS'])
-    pablo_neruda.max_words_per_line = mwpl
-    pablo_neruda.lines_per_poem = lpp
-    pablo_neruda.words_per_title = wpt
+	pablo_neruda = PabloNeruda(jobject['NGRAM'], jobject['VOCAB'], jobject['PROBS'])
+	pablo_neruda.max_words_per_line = mwpl
+	pablo_neruda.lines_per_poem = lpp
+	pablo_neruda.words_per_title = wpt
 
-    poem = pablo_neruda.write_poem()
-    title = pablo_neruda.write_title(poem)
-    print(repr(poem))
-    print('\n\t', title, '\n')
-    for line in poem:
-        print('\t', line)
-    print()
+	poem = pablo_neruda.write_poem()
+	title = pablo_neruda.write_title(poem)
+	print(repr(poem))
+	print('\n\t', title, '\n')
+	for line in poem:
+		print('\t', line)
+	print()
 
-    return (title, poem)
+	return (title, poem)
+
+def generate_from_csv(ngram, mwpl, lpp, wpt):
+	probs = {}
+	vocab = []
+	if not ngram:
+		raise ValueError("missing ngram value: [1, 2, 3, 4]")
+	with open(join('ngrams_probs', ngram+'.csv')) as csvfile:
+		csvreader = csv.reader(csvfile, delimiter='\t')
+		actual_tok = False
+		for row in csvreader:
+			if ngram == 'unigram':
+				probs[row[0]] = np.log(float(row[1]))
+				continue
+			if actual_tok != row[0]:
+				actual_tok = '-'.join(row[0].split(' '))
+				probs[actual_tok] = {}
+				probs[actual_tok][row[1]] = np.log(float(row[2]))
+			else:
+				probs[actual_tok][row[1]] = np.log(float(row[2]))
+			vocab.extend(row[0].split(' '))
+			vocab.append(row[1])
+
+	vocab = list(set(vocab))
+
+	n2w = {'unigram':1, 'bigram':2, 'trigram':3, 'fourthgram':4}
+	pablo_neruda = PabloNeruda(n2w[ngram], vocab, probs)
+	pablo_neruda.max_words_per_line = mwpl
+	pablo_neruda.lines_per_poem = lpp
+	pablo_neruda.words_per_title = wpt
+
+	poem = pablo_neruda.write_poem()
+	title = pablo_neruda.write_title(poem)
+	print(repr(poem))
+	print('\n\t', title, '\n')
+	for line in poem:
+		print('\t', line)
+	print()
+
+	return (title, poem)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='...')
-    parser.add_argument('-n', '--ngram', action='store', type=str, default=False)
-    parser.add_argument('-l', '--max_words_per_line', action='store', type=int, default=False)
-    parser.add_argument('-p', '--lines_per_poem', action='store', type=int, default=False)
-    parser.add_argument('-t', '--words_per_title', action='store', type=int, default=False)
-    args = parser.parse_args()
+	parser = argparse.ArgumentParser(description='...')
+	parser.add_argument('-n', '--ngram', action='store', type=str, default=False)
+	parser.add_argument('-l', '--max_words_per_line', action='store', type=int, default=6)
+	parser.add_argument('-p', '--lines_per_poem', action='store', type=int, default=6)
+	parser.add_argument('-t', '--words_per_title', action='store', type=int, default=6)
+	args = parser.parse_args()
 
-    title, poem = generate_from_json(args.ngram, args.max_words_per_line, args.lines_per_poem, args.words_per_title)
+	title, poem = generate_from_csv(args.ngram, args.max_words_per_line, args.lines_per_poem, args.words_per_title)
